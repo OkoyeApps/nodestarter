@@ -2,8 +2,17 @@ var { createServer, METHODS } = require('http');
 var { parse } = require('url');
 var stringDecoder = require('string_decoder').StringDecoder;
 var config = require('./lib/config');
+var helper = require('./lib/helper');
+var datahelp = require('./lib/data');
 //Startup the httpsserver
 var httpServer = createServer(function (req, res) {
+
+    datahelp.create('users', "test",
+     {name : "node starter", description: "Testing new file"}, function(err){
+         console.log("file creation", err);
+     });
+
+
     //Get the url and parse it 
     var parsedurl = parse(req.url, true);
     var pathname = parsedurl.pathname;
@@ -25,13 +34,12 @@ var httpServer = createServer(function (req, res) {
     req.on('end', function () {
         decoder.end();
 
-        console.log("d")
         var data =  {
             trimedPath : trimedPath,
             query : queryString,
             method : method,
             headers : headers,
-            payload : JSON.stringify(buffer)
+            payload : helper.parsejsonObject(buffer)
         };
 
         console.log("trimed path", trimedPath);
@@ -40,6 +48,7 @@ var httpServer = createServer(function (req, res) {
 
         chosenhandler(data, function(statuscode,  payload){
             var payloadString = JSON.stringify(payload);
+            statuscode = typeof(statuscode) == 'number' ? statuscode : 200;
             res.setHeader("Content-Type", "application/json");
             res.writeHead(statuscode)
             res.end(payloadString);
