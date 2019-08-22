@@ -23,13 +23,48 @@ var httpServer = createServer(function (req, res) {
     })
 
     req.on('end', function () {
-        decoder.end()
-        res.setHeader("Content-Type", "application/json");
-        res.writeHead(500)
-        res.end("end response" + " trimed path " + trimedPath);
+        decoder.end();
+
+        console.log("d")
+        var data =  {
+            trimedPath : trimedPath,
+            query : queryString,
+            method : method,
+            headers : headers,
+            payload : JSON.stringify(buffer)
+        };
+
+        console.log("trimed path", trimedPath);
+        var chosenhandler = typeof(router[trimedPath]) !== 'undefined' ?  router[trimedPath] :
+        handler.notFound;
+
+        chosenhandler(data, function(statuscode,  payload){
+            var payloadString = JSON.stringify(payload);
+            res.setHeader("Content-Type", "application/json");
+            res.writeHead(statuscode)
+            res.end(payloadString);
+            console.log("end response" + " trimed path " + statuscode, payload);
+
+        })
     })
 
 })
+
+var handler = {};
+
+handler.ping = (data, callback) => {
+    callback(200, {success : true });
+}
+
+handler.notFound = (data, callback) => {
+    callback(404, {success : false, message : "Not found"});
+}
+
+
+
+var router = {
+    'ping' : handler.ping
+};
 
 
 httpServer.listen(config.port, function () {
